@@ -15,47 +15,115 @@ export const TOPIC_CONTENT: Record<string, TopicContentEntry> = {
   // ─── PHASE 1 ────────────────────────────────────────────────────────────────
 
   'python-core': {
-    simpleExplanation: 'Python is the primary programming language for data engineering. Think of it as the universal tool in your DE toolkit — you use it to write scripts that move data, call APIs, process files, and orchestrate workflows.',
-    deepExplanation: `**Python for Data Engineering**\n\nPython for Data Engineering goes beyond basic scripting. As a DE, you'll use Python across three main areas:\n\n**1. Ingestion scripts** – Calling REST APIs, reading files, connecting to databases. You need to handle pagination, rate limiting, retries with exponential backoff, and proper error handling.\n\n**2. Transformation logic** – Processing data before loading it into the lake or warehouse. This includes parsing complex JSON, flattening nested structures, data type conversion, and business rule application.\n\n**3. Orchestration** – Writing custom ADF activities, Databricks notebooks, and Azure Functions. These all require solid Python fundamentals.\n\nThe key insight: data engineers write Python code that runs in production 24/7. Your code must be robust, observable (structured logs), and maintainable.`,
+    simpleExplanation: 'Python is the #1 language for data engineering — you use it to call APIs, read files, process data, and automate everything. Think of it as the universal glue between every data system you will ever work with.',
+    deepExplanation: `**Why Python dominates Data Engineering**\nPython won because of three things: the ecosystem (pandas, PySpark, requests, SQLAlchemy — libraries for everything), readability (new team members can read your pipeline code without a steep learning curve), and glue code (Python connects to every database, API, cloud SDK, and file format without extra configuration).\n\n**The four areas every DE uses Python for**\n\n**1. Ingestion scripts** — Calling REST APIs, reading files from FTP/SFTP, connecting to on-prem databases, writing Azure Functions. You need to handle pagination (APIs don't return everything at once), rate limiting (APIs throttle heavy users), retries with exponential backoff (transient failures are normal), and proper error handling (your script running at 2AM must log clearly what went wrong).\n\n**2. Data transformation** — Processing raw data before loading to your lake. Parsing complex nested JSON, flattening arrays, data type coercion (strings to dates, strings to numbers), null handling, deduplication, and applying business rules that are too complex for SQL.\n\n**3. Orchestration glue** — Writing ADF custom activities (Python running inside Azure Functions), Databricks notebooks, Airflow DAGs, and Azure Functions that trigger on events. All of these require solid Python.\n\n**4. Tooling and utilities** — Schema validation (Pydantic), config management (Python-dotenv, Pydantic BaseSettings), testing (pytest), CLI tools (Click/Typer), and infrastructure scripts.\n\n**Python performance for DE**\nFor in-memory pandas operations on files under 1GB, Python is fast enough. For anything larger, you hand off to PySpark (distributed) or DuckDB (columnar in-process). The key insight: Python is the driver — it orchestrates the heavy lifting but doesn't always do the heavy lifting itself.\n\n**Typing and code quality**\nPython is dynamically typed but you should use type hints (def process(df: pd.DataFrame) -> pd.DataFrame) in all production code. Type hints enable IDE autocompletion, catch bugs before runtime, and make code self-documenting. Run mypy in CI to enforce them.`,
     keyPoints: [
-      'Master file I/O: CSV, JSON, XML, YAML, Parquet with proper encoding handling',
-      'Async/await with aiohttp for parallel API calls — massive speed improvement over sequential',
-      'Logging module with structured JSON logs — never use print() in production',
-      'Dataclasses and Pydantic for config validation and schema definition',
-      'Virtual environments (venv, poetry) — always isolate dependencies',
-      'pytest for unit and integration tests — write tests from day 1',
+      'Master file I/O: open(), csv.DictReader, json.load(), yaml.safe_load(), pyarrow.read_parquet()',
+      'List/dict/set comprehensions: [x*2 for x in data if x > 0] — concise, readable, fast',
+      'Generators (yield) for memory-efficient processing of large files line-by-line',
+      'Exception handling: try/except/finally with specific exceptions, not bare except',
+      'Logging module with JSON format — never use print() in production code',
+      'Type hints: def process(rows: list[dict]) -> pd.DataFrame — enable IDE help and catch bugs early',
+      'Dataclasses (@dataclass) for config objects — auto __init__, __repr__, __eq__',
+      'Context managers (with open() as f) ensure resources are always closed even on error',
+      'Virtual environments (venv, poetry) — always isolate each project\'s dependencies',
+      'f-strings (f"Hello {name}") are the modern string formatting standard — faster than .format()',
     ],
     commonMistakes: [
-      'Writing everything in Jupyter notebooks — learn modules and packages early',
-      'Using print() instead of logging — you cannot search print output in production logs',
-      'No error handling — transient failures (network, rate limits) need retry logic',
-      'Hardcoding credentials in scripts — always use environment variables or Key Vault',
+      'Writing everything in one big script — split into functions, then modules, from day one',
+      'Using print() instead of logging.info() — print output is invisible in production logs',
+      'No error handling — transient failures (network blips, rate limits) need retry logic',
+      'Hardcoding credentials in scripts — always load from environment variables or Key Vault',
+      'Reading an entire large file into memory at once — use generators/chunked reads for big files',
+      'Using bare except: — this catches KeyboardInterrupt and SystemExit, hiding real bugs',
+      'Not using type hints — makes code harder to maintain and IDE support poor',
     ],
     interviewTips: [
-      'Know how to implement exponential backoff for API retries (common coding question)',
-      'Explain the difference between threading, multiprocessing, and asyncio',
-      'Show you can write a context manager (__enter__/__exit__)',
-      'Explain GIL (Global Interpreter Lock) and why asyncio avoids it for I/O-bound tasks',
+      '"Write a function that retries an HTTP call 3 times with exponential backoff" — very common coding question',
+      '"What is the difference between a list and a generator?" — memory efficiency question',
+      '"Explain the GIL and when it matters for data engineering work"',
+      '"How would you read a 50GB CSV file without running out of memory?" — use chunked reading',
+      '"Write a context manager using __enter__ and __exit__" — shows intermediate Python knowledge',
     ],
     bestPractices: [
-      'Separate config, ingestion, transformation, and loading concerns into modules',
-      'Use structlog or logging with JSON formatter for searchable logs',
-      'Use Pydantic BaseSettings to validate environment variables at startup',
-      'Use tenacity library for retry logic with exponential backoff',
+      'Organize code: src/ingestion/, src/transformation/, src/utils/, tests/ — from project start',
+      'Use structlog or logging with JSONFormatter for searchable logs in Azure Log Analytics',
+      'Use Pydantic BaseSettings to validate all environment variables at startup — fail fast',
+      'Use tenacity for retry logic — do not write manual retry loops',
+      'Pin dependency versions in requirements.txt (requests==2.31.0) for reproducible builds',
+      'Run ruff or flake8 + mypy in pre-commit hooks — catch style and type issues before commit',
     ],
     codeExamples: [
       {
-        title: 'Production-grade API ingestion with retry',
+        title: 'Core Python patterns for DE: file I/O, generators, logging',
         language: 'python',
-        description: 'The pattern used in real ADF custom activities',
-        code: `import asyncio, json, logging, time
-from dataclasses import dataclass
-from typing import AsyncGenerator
-import aiohttp
-from tenacity import retry, stop_after_attempt, wait_exponential
+        code: `import csv
+import json
+import logging
+from pathlib import Path
+from typing import Generator
 
-logging.basicConfig(level=logging.INFO,
-    format='{"time":"%(asctime)s","level":"%(levelname)s","msg":"%(message)s"}')
+# --- Structured logging setup (use this in every module) ---
+logging.basicConfig(
+    level=logging.INFO,
+    format='{"time":"%(asctime)s","level":"%(levelname)s","logger":"%(name)s","msg":"%(message)s"}'
+)
+logger = logging.getLogger(__name__)
+
+# --- Generator: read large CSV without loading all into memory ---
+def read_csv_chunked(path: str, chunk_size: int = 1000) -> Generator[list[dict], None, None]:
+    """Yields chunks of rows — safe for files too large to fit in RAM."""
+    with open(path, encoding="utf-8", newline="") as f:
+        reader = csv.DictReader(f)
+        chunk: list[dict] = []
+        for row in reader:
+            chunk.append(row)
+            if len(chunk) >= chunk_size:
+                yield chunk
+                chunk = []
+        if chunk:  # yield leftover rows
+            yield chunk
+
+# --- Type hints + dataclass for clean config ---
+from dataclasses import dataclass, field
+
+@dataclass
+class IngestionConfig:
+    source_path: str
+    target_path: str
+    batch_size: int = 1000
+    encoding: str = "utf-8"
+    tags: list[str] = field(default_factory=list)  # NEVER use mutable default directly
+
+# --- Context manager for custom resource management ---
+class TempFile:
+    def __init__(self, path: str):
+        self.path = Path(path)
+
+    def __enter__(self):
+        logger.info(f"Opening temp file: {self.path}")
+        return self.path.open("w")
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        if self.path.exists():
+            self.path.unlink()  # Always clean up, even if exception occurred
+        return False  # Don't suppress exceptions
+
+# --- Usage ---
+config = IngestionConfig(source_path="data/orders.csv", target_path="output/")
+for i, chunk in enumerate(read_csv_chunked(config.source_path, config.batch_size)):
+    logger.info(f"Processing chunk {i+1} with {len(chunk)} rows")
+    # process chunk here`,
+      },
+      {
+        title: 'Production-grade API ingestion with retry and pagination',
+        language: 'python',
+        code: `import asyncio
+from dataclasses import dataclass
+import aiohttp
+from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception_type
+import logging
+
 logger = logging.getLogger(__name__)
 
 @dataclass
@@ -64,117 +132,173 @@ class APIConfig:
     api_key: str
     page_size: int = 100
 
-@retry(stop=stop_after_attempt(3), wait=wait_exponential(min=4, max=10))
+@retry(
+    stop=stop_after_attempt(3),
+    wait=wait_exponential(multiplier=1, min=4, max=60),
+    retry=retry_if_exception_type((aiohttp.ClientError, asyncio.TimeoutError)),
+    reraise=True
+)
 async def fetch_page(session: aiohttp.ClientSession, url: str, params: dict) -> dict:
-    async with session.get(url, params=params) as r:
-        if r.status == 429:
-            await asyncio.sleep(int(r.headers.get('Retry-After', 60)))
-            raise Exception("Rate limited")
-        r.raise_for_status()
-        return await r.json()
+    timeout = aiohttp.ClientTimeout(total=30)
+    async with session.get(url, params=params, timeout=timeout) as response:
+        if response.status == 429:
+            retry_after = int(response.headers.get("Retry-After", 60))
+            logger.warning(f"Rate limited. Waiting {retry_after}s")
+            await asyncio.sleep(retry_after)
+            raise aiohttp.ClientError("Rate limited")
+        response.raise_for_status()
+        return await response.json()
 
-async def paginated_fetch(config: APIConfig, endpoint: str) -> AsyncGenerator[dict, None]:
-    headers = {"Authorization": f"Bearer {config.api_key}"}
-    params = {"page": 1, "per_page": config.page_size}
+async def fetch_all_pages(config: APIConfig, endpoint: str) -> list[dict]:
+    headers = {"Authorization": f"Bearer {config.api_key}", "Accept": "application/json"}
+    all_records: list[dict] = []
+    page = 1
     async with aiohttp.ClientSession(headers=headers) as session:
         while True:
-            data = await fetch_page(session, f"{config.base_url}/{endpoint}", params)
-            for item in data.get("items", []):
-                yield item
-            if not data.get("has_next"):
+            data = await fetch_page(
+                session, f"{config.base_url}/{endpoint}",
+                {"page": page, "per_page": config.page_size}
+            )
+            records = data.get("items", [])
+            all_records.extend(records)
+            logger.info(f"Page {page}: fetched {len(records)} records (total: {len(all_records)})")
+            if not data.get("has_next_page"):
                 break
-            params["page"] += 1`,
+            page += 1
+    return all_records`,
       },
       {
-        title: 'Pydantic config validation',
+        title: 'Pydantic v2 config validation from environment variables',
         language: 'python',
-        code: `from pydantic import BaseSettings, validator
+        code: `from pydantic import field_validator
+from pydantic_settings import BaseSettings  # pip install pydantic-settings
+from typing import Literal
 
-class PipelineConfig(BaseSettings):
-    storage_account_name: str
-    source_container: str = "raw"
+class PipelineSettings(BaseSettings):
+    # These must exist as env vars: STORAGE_ACCOUNT, DB_PASSWORD, etc.
+    storage_account: str
+    db_password: str
     batch_size: int = 1000
+    environment: Literal["dev", "staging", "prod"] = "dev"
+    log_level: str = "INFO"
 
-    class Config:
-        env_prefix = "PIPELINE_"
+    model_config = {"env_prefix": "", "case_sensitive": False}
 
-    @validator("batch_size")
-    def batch_size_positive(cls, v):
+    @field_validator("batch_size")
+    @classmethod
+    def must_be_positive(cls, v: int) -> int:
         if v <= 0:
-            raise ValueError("batch_size must be positive")
+            raise ValueError(f"batch_size must be > 0, got {v}")
         return v
 
-config = PipelineConfig()  # Fails fast if env vars missing`,
+    @field_validator("storage_account")
+    @classmethod
+    def no_https_prefix(cls, v: str) -> str:
+        if v.startswith("https://"):
+            raise ValueError("storage_account should be the account name only, not a URL")
+        return v
+
+# On startup — raises ValidationError immediately if env vars are missing/wrong
+settings = PipelineSettings()
+print(f"Running in {settings.environment} against {settings.storage_account}")`,
       },
     ],
     resources: [
       { title: 'Python Official Tutorial', url: 'https://docs.python.org/3/tutorial/', type: 'docs', free: true },
-      { title: 'tenacity retry library', url: 'https://github.com/jd/tenacity', type: 'github', free: true },
-      { title: 'Pydantic docs', url: 'https://docs.pydantic.dev', type: 'docs', free: true },
-      { title: 'aiohttp quickstart', url: 'https://docs.aiohttp.org/en/stable/client_quickstart.html', type: 'docs', free: true },
+      { title: 'Python Built-in Functions Reference', url: 'https://docs.python.org/3/library/functions.html', type: 'docs', free: true },
+      { title: 'Real Python — Python Basics', url: 'https://realpython.com/learning-paths/python-basics/', type: 'tutorial', free: true },
+      { title: 'Automate the Boring Stuff with Python (free book)', url: 'https://automatetheboringstuff.com/', type: 'book', free: true },
+      { title: 'Pydantic v2 docs', url: 'https://docs.pydantic.dev/latest/', type: 'docs', free: true },
+      { title: 'tenacity retry library', url: 'https://tenacity.readthedocs.io/en/latest/', type: 'docs', free: true },
+      { title: 'aiohttp client quickstart', url: 'https://docs.aiohttp.org/en/stable/client_quickstart.html', type: 'docs', free: true },
+      { title: 'Python Logging HOWTO (official)', url: 'https://docs.python.org/3/howto/logging.html', type: 'docs', free: true },
+      { title: 'Exercism Python Track (practice problems)', url: 'https://exercism.org/tracks/python', type: 'practice', free: true },
+      { title: 'freeCodeCamp — Python Full Course (YouTube)', url: 'https://www.youtube.com/watch?v=rfscVS0vtbw', type: 'video', free: true },
+      { title: 'Corey Schafer Python Tutorials (YouTube)', url: 'https://www.youtube.com/@coreyms', type: 'video', free: true },
+      { title: 'Real Python Podcast', url: 'https://realpython.com/podcasts/rpp/', type: 'podcast', free: true },
     ],
     quiz: [
       {
-        question: 'What is the difference between threading and asyncio in Python?',
+        question: 'What is the problem with this function signature: def __init__(self, items=[])?',
         options: [
-          'Threading is for I/O-bound tasks, asyncio is for CPU-bound tasks',
-          'Threading uses OS threads (parallelism limited by GIL for CPU), asyncio uses single-thread cooperative concurrency best for I/O',
-          'They are identical in performance',
-          'Asyncio requires multiple CPU cores',
+          'Lists cannot be default arguments',
+          'The default list is created once at function definition time and shared across all instances — mutating it in one instance affects all others',
+          'This is valid and recommended',
+          'The argument needs a type hint',
         ],
         answer: 1,
-        explanation: 'Threading creates OS threads but Python\'s GIL prevents true CPU parallelism. Asyncio uses a single-thread event loop — ideal for I/O-bound tasks like API calls.',
+        explanation: 'Mutable default arguments (list, dict, set) are created once when the function is defined, not each time it is called. Every instance shares the exact same list object. Fix: use def __init__(self, items=None): self.items = items if items is not None else []',
       },
       {
-        question: 'Which logging approach is preferred in production?',
+        question: 'What is a generator in Python and why is it useful for large file processing?',
         options: [
-          'print() statements for simplicity',
-          'logging.basicConfig() with text format',
-          'Structured JSON logging with timestamp, level, message, correlation_id',
-          'No logging — just check the data',
+          'A generator creates random data for testing',
+          'A generator is a function that uses yield to produce values one at a time — only one value is in memory at a time, making it memory-efficient for large files',
+          'A generator pre-computes all values for faster access',
+          'Generators are only useful for number sequences',
         ],
-        answer: 2,
-        explanation: 'Structured JSON logs are machine-readable and queryable in Azure Log Analytics. They let you filter by correlation_id to trace a single pipeline run across distributed systems.',
+        answer: 1,
+        explanation: 'A regular function returns all results at once (loaded into memory). A generator function uses yield to produce values one at a time — the caller pulls the next value when ready. Reading a 10GB CSV with a generator uses constant memory regardless of file size, while loading it all with list() would crash on most machines.',
+      },
+      {
+        question: 'Why should you use structured JSON logging instead of print() in production pipelines?',
+        options: [
+          'print() is slower than logging',
+          'JSON logs are machine-readable — tools like Azure Log Analytics can filter, aggregate, and alert on structured fields like log level, pipeline name, and correlation_id',
+          'print() does not work in Python 3',
+          'logging is required by Azure',
+        ],
+        answer: 1,
+        explanation: 'print() produces unstructured text — you cannot query "show me all ERROR logs from pipeline X in the last hour." JSON logs with fields like {"level":"ERROR","pipeline":"orders_load","correlation_id":"abc123"} let you write KQL queries and set up monitoring alerts. This is the difference between being able to debug production issues in minutes vs hours.',
       },
     ],
   },
 
   'python-oop': {
-    simpleExplanation: 'Object-Oriented Programming lets you bundle data and behavior together into reusable "blueprints" called classes — instead of writing the same logic over and over, you build it once and reuse it everywhere.',
-    deepExplanation: `**Why OOP matters in Data Engineering**\n\nAs a data engineer, you write pipelines that share a lot of common logic: connecting to storage, logging, error handling, config loading. OOP lets you build that logic once in a base class and reuse it across all your pipelines.\n\n**Classes, inheritance, and composition**\nA class is a template. Inheritance lets a child class get all the behavior of a parent. Composition (using other objects inside a class) is often preferred over deep inheritance trees — it's more flexible.\n\n**Modules and packages**\nA module is a .py file. A package is a folder with an __init__.py. Organizing your DE code into packages (ingestion/, transformation/, utils/) makes it maintainable and testable.\n\n**Virtual environments**\nvenv or poetry create isolated Python environments so your pipeline's dependencies don't clash with other projects on the same machine or server.`,
+    simpleExplanation: 'OOP lets you build reusable pipeline "blueprints" — write the shared logic (logging, error handling, config loading) once in a base class and reuse it in every pipeline you ever build, without copying code.',
+    deepExplanation: `**Why OOP matters specifically for Data Engineering**\nData pipelines have enormous amounts of shared logic: every pipeline connects to storage, logs progress, handles errors, reads config, and follows the same extract→transform→load pattern. Without OOP, each pipeline is a standalone script with the same boilerplate copy-pasted everywhere — a maintenance nightmare. With OOP, you build a BasePipeline once and all pipelines inherit the shared behavior.\n\n**The four pillars — in DE terms**\n**Encapsulation**: bundle a database connection and its methods (connect, query, close) in a DatabaseConnector class. Callers don't need to know how the connection is managed — they just call .query(). **Inheritance**: SqlPipeline and APIPipeline both extend BasePipeline — they get logging, error handling, and retry logic for free. **Polymorphism**: a list of pipelines can all call .run() even though each pipeline extracts data differently — the base class defines the interface. **Abstraction**: abstract methods (@abstractmethod) force every subclass to implement extract() and transform() — you can't forget to add them.\n\n**Composition vs inheritance**\nInheritance ("is-a"): SqlPipeline IS a BasePipeline. Good for shallow hierarchies. Composition ("has-a"): Pipeline HAS a Connector, HAS a Logger, HAS a Validator. Preferred for complex systems — compose behavior from small focused components instead of building deep inheritance trees that become hard to understand.\n\n**Modules and packages — the file structure**\nA module is any .py file. A package is a folder containing __init__.py. Professional DE projects structure code as: src/ingestion/ (extractors), src/transformation/ (transformers), src/loading/ (loaders), src/utils/ (shared helpers), tests/ (mirrors src/ structure). This makes code navigable, testable, and importable.\n\n**Special methods (dunder methods)**\n__init__: constructor. __repr__: string representation for debugging. __str__: human-readable string. __eq__: equality comparison. __enter__/__exit__: context manager protocol. Knowing these makes your classes work naturally with Python's built-in operators and patterns.\n\n**Virtual environments and dependency management**\nvenv creates an isolated Python environment per project — no version conflicts between projects. poetry goes further: it manages dependencies with a lock file (exact versions), builds packages, and publishes to PyPI. Use poetry for all new projects. pyproject.toml is the modern replacement for setup.py + requirements.txt.`,
     keyPoints: [
-      'Classes encapsulate state (attributes) and behavior (methods) together',
-      'Use __init__ for initialization, @property for computed attributes',
-      '@dataclass decorator auto-generates __init__, __repr__, __eq__ — great for config objects',
-      'Abstract base classes (ABC) enforce an interface contract across pipeline implementations',
-      'Use composition over inheritance for complex pipelines — avoid deep class hierarchies',
-      'Package structure: src/ingestion/__init__.py, src/transformation/__init__.py, etc.',
+      '__init__(self) is the constructor — runs when you create an instance. self is the instance reference',
+      '@property turns a method into an attribute-style access with getter/setter control',
+      '@dataclass auto-generates __init__, __repr__, __eq__ from class fields — use for config/DTO objects',
+      '@abstractmethod forces subclasses to implement the method — use for pipeline interfaces',
+      'super().__init__() calls the parent class constructor — always call it when overriding __init__',
+      'Composition: Pipeline(connector=SqlConnector(), validator=SchemaValidator()) over deep inheritance',
+      'Package __init__.py controls what gets exported: from ingestion import SqlExtractor works because __init__.py imports it',
+      'ClassMethod (@classmethod) receives the class as first arg — use for factory methods: Pipeline.from_config(config)',
+      'StaticMethod (@staticmethod) is a plain function grouped in a class — no self or cls, no instance needed',
+      'poetry add requests adds to pyproject.toml. poetry install recreates the exact environment from poetry.lock',
     ],
     commonMistakes: [
-      'Using mutable default arguments in __init__ (e.g., def __init__(self, items=[]) is a bug — items is shared)',
-      'Deep inheritance chains (5+ levels) that become impossible to understand',
-      'Not using dataclasses for simple data containers — writing boilerplate __init__ manually',
-      'Forgetting to call super().__init__() in child classes when overriding __init__',
+      'Mutable default arguments: def __init__(self, tags=[]) — the list is shared across all instances',
+      'Deep inheritance (5+ levels) — instead of inheriting more behavior, compose with small classes',
+      'God classes — one class that does everything. Single Responsibility: each class has one job',
+      'Forgetting super().__init__() — parent class initialization is silently skipped',
+      'Not using @dataclass for simple data containers — writing __init__, __repr__, __eq__ manually is error-prone',
+      'Using class-level mutable attributes instead of instance-level — all instances share class attributes',
     ],
     interviewTips: [
-      'Explain the four pillars: encapsulation, inheritance, polymorphism, abstraction',
-      'Show how you would design a base Extractor class and concrete implementations (SqlExtractor, APIExtractor)',
-      'Know the difference between @staticmethod, @classmethod, and instance methods',
-      'Explain __enter__ and __exit__ for context managers (very common for resource management)',
+      '"Explain the four pillars of OOP with a data engineering example"',
+      '"When would you use composition over inheritance? Give an example"',
+      '"Write a context manager class using __enter__ and __exit__ that times a code block"',
+      '"What is the difference between @staticmethod, @classmethod, and an instance method?"',
+      '"How would you design a base Extractor class with SqlExtractor and APIExtractor implementations?"',
     ],
     bestPractices: [
-      'Use @dataclass for config/DTO objects — eliminates boilerplate and adds __repr__ for free',
-      'Keep classes small and focused on one responsibility (SRP)',
-      'Use ABC to define pipeline interfaces: abstract extract(), transform(), load() methods',
-      'Use poetry for dependency management — pyproject.toml replaces setup.py + requirements.txt',
+      'Use @dataclass for all config and data transfer objects — eliminates boilerplate, adds __repr__ for free logging',
+      'Define pipeline interfaces with ABC and @abstractmethod — makes contract explicit and IDE-verifiable',
+      'Use composition: inject dependencies (connector, logger, validator) into the constructor',
+      'One class per file for large classes; small helper classes can share a file',
+      'Use poetry for all projects: poetry new project-name scaffolds the correct structure',
+      'Type-hint all method signatures including return types: def extract(self) -> list[dict]',
     ],
     codeExamples: [
       {
-        title: 'Abstract base pipeline with concrete implementations',
+        title: 'Abstract base pipeline with ABC — production pattern',
         language: 'python',
-        description: 'The pattern used to build reusable DE library code',
         code: `from abc import ABC, abstractmethod
-from dataclasses import dataclass
+from dataclasses import dataclass, field
+from typing import Any
 import logging
 
 logger = logging.getLogger(__name__)
@@ -184,332 +308,734 @@ class PipelineConfig:
     source: str
     target: str
     batch_size: int = 1000
+    tags: list[str] = field(default_factory=list)  # Safe mutable default
 
 class BasePipeline(ABC):
-    """All pipelines share logging and config loading."""
+    """Shared infrastructure: logging, error handling, run orchestration."""
 
-    def __init__(self, config: PipelineConfig):
+    def __init__(self, config: PipelineConfig) -> None:
         self.config = config
-        self.logger = logging.getLogger(self.__class__.__name__)
+        self.logger = logging.getLogger(self.__class__.__name__)  # Per-class logger
 
     @abstractmethod
-    def extract(self) -> list:
-        """Subclasses must implement extraction logic."""
+    def extract(self) -> list[dict]:
+        """Must be implemented by every pipeline."""
         ...
 
     @abstractmethod
-    def transform(self, data: list) -> list:
-        """Subclasses must implement transformation logic."""
+    def transform(self, data: list[dict]) -> list[dict]:
+        """Must be implemented by every pipeline."""
         ...
 
-    def load(self, data: list) -> None:
+    def load(self, data: list[dict]) -> None:
+        # Base load logic — subclasses can override
         self.logger.info(f"Loading {len(data)} records to {self.config.target}")
 
     def run(self) -> None:
+        """Orchestrates the full ETL — subclasses customize each step."""
+        self.logger.info(f"Starting pipeline for {self.config.source}")
         raw = self.extract()
         transformed = self.transform(raw)
         self.load(transformed)
         self.logger.info("Pipeline complete")
 
-
 class SqlToBlobPipeline(BasePipeline):
-    def extract(self) -> list:
-        self.logger.info(f"Extracting from SQL: {self.config.source}")
-        return [{"id": 1, "value": "example"}]  # Real: run SQL query
+    def extract(self) -> list[dict]:
+        self.logger.info(f"Querying SQL: {self.config.source}")
+        return [{"id": 1, "order_date": "2024-01-15", "amount": 99.99}]
 
-    def transform(self, data: list) -> list:
-        return [{**row, "processed": True} for row in data]
+    def transform(self, data: list[dict]) -> list[dict]:
+        return [{**row, "processed": True, "pipeline": "sql_to_blob"} for row in data]
 
+class APIToBlobPipeline(BasePipeline):
+    def extract(self) -> list[dict]:
+        self.logger.info(f"Calling API: {self.config.source}")
+        return [{"event_id": "abc", "ts": "2024-01-15T10:00:00Z"}]
 
-config = PipelineConfig(source="sql://mydb/orders", target="blob://raw/orders/")
-SqlToBlobPipeline(config).run()`,
+    def transform(self, data: list[dict]) -> list[dict]:
+        return [{**row, "ingested_by": "api_pipeline"} for row in data]
+
+# Polymorphism: both pipelines can be run identically
+pipelines: list[BasePipeline] = [
+    SqlToBlobPipeline(PipelineConfig("sql://db/orders", "blob://raw/orders")),
+    APIToBlobPipeline(PipelineConfig("https://api.example.com/events", "blob://raw/events")),
+]
+for pipeline in pipelines:
+    pipeline.run()  # Each calls its own extract/transform`,
+      },
+      {
+        title: 'Composition pattern + context manager + factory classmethod',
+        language: 'python',
+        code: `from dataclasses import dataclass
+from pathlib import Path
+import time, logging
+
+logger = logging.getLogger(__name__)
+
+# Small, focused components (composition)
+@dataclass
+class StorageConfig:
+    account: str
+    container: str
+    path_prefix: str = ""
+
+    @classmethod
+    def from_env(cls) -> "StorageConfig":
+        """Factory: create from environment variables."""
+        import os
+        return cls(
+            account=os.environ["STORAGE_ACCOUNT"],
+            container=os.environ["STORAGE_CONTAINER"],
+        )
+
+    @property
+    def base_url(self) -> str:
+        """Computed attribute — derived from other fields."""
+        return f"abfss://{self.container}@{self.account}.dfs.core.windows.net/{self.path_prefix}"
+
+# Context manager using __enter__ / __exit__
+class Timer:
+    """Times a code block and logs the duration."""
+    def __init__(self, name: str) -> None:
+        self.name = name
+
+    def __enter__(self) -> "Timer":
+        self._start = time.perf_counter()
+        return self
+
+    def __exit__(self, *args: Any) -> bool:
+        elapsed = time.perf_counter() - self._start
+        logger.info(f"{self.name} completed in {elapsed:.2f}s")
+        return False  # Don't suppress exceptions
+
+# Usage
+config = StorageConfig.from_env()  # Factory classmethod
+print(config.base_url)             # Property — no ()
+
+with Timer("data-load"):
+    # ... expensive operation ...
+    time.sleep(0.1)
+# Logs: "data-load completed in 0.10s"`,
       },
     ],
     resources: [
-      { title: 'Python OOP docs', url: 'https://docs.python.org/3/tutorial/classes.html', type: 'docs', free: true },
-      { title: 'Python dataclasses', url: 'https://docs.python.org/3/library/dataclasses.html', type: 'docs', free: true },
-      { title: 'Poetry dependency manager', url: 'https://python-poetry.org/docs/', type: 'docs', free: true },
+      { title: 'Python Classes (official tutorial)', url: 'https://docs.python.org/3/tutorial/classes.html', type: 'docs', free: true },
+      { title: 'Python dataclasses (official)', url: 'https://docs.python.org/3/library/dataclasses.html', type: 'docs', free: true },
+      { title: 'abc — Abstract Base Classes (official)', url: 'https://docs.python.org/3/library/abc.html', type: 'docs', free: true },
+      { title: 'Real Python — OOP in Python 3', url: 'https://realpython.com/python3-object-oriented-programming/', type: 'tutorial', free: true },
+      { title: 'Real Python — Python dataclasses guide', url: 'https://realpython.com/python-data-classes/', type: 'tutorial', free: true },
+      { title: 'Corey Schafer — OOP Series (YouTube)', url: 'https://www.youtube.com/watch?v=ZDa-Z5JzLYM', type: 'video', free: true },
+      { title: 'Poetry dependency manager docs', url: 'https://python-poetry.org/docs/', type: 'docs', free: true },
+      { title: 'Python Packaging User Guide', url: 'https://packaging.python.org/en/latest/', type: 'docs', free: true },
+      { title: 'Fluent Python (book — intermediate)', url: 'https://www.oreilly.com/library/view/fluent-python-2nd/9781492056348/', type: 'book', free: false },
     ],
     quiz: [
       {
-        question: 'What is the problem with this code: def __init__(self, items=[])?',
+        question: 'What does @abstractmethod do and why is it useful for pipeline design?',
         options: [
-          'It is a syntax error',
-          'The list is shared across all instances — mutations to items in one instance affect others',
-          'Lists cannot be used as default arguments',
-          'No problem, this is fine',
+          'It makes a method run faster',
+          'It marks a method that subclasses MUST implement — instantiating a class without implementing all abstract methods raises TypeError',
+          'It hides the method from external code',
+          'It automatically generates documentation',
         ],
         answer: 1,
-        explanation: 'Mutable default arguments are created once at function definition time, not on each call. Every instance shares the same list object. Fix: use def __init__(self, items=None): self.items = items or []',
+        explanation: 'When BasePipeline has @abstractmethod extract(), any subclass that does not implement extract() cannot be instantiated — Python raises TypeError immediately. This is a compile-time-like safety net: you can\'t accidentally deploy a pipeline that forgets to implement the data extraction step.',
+      },
+      {
+        question: 'When should you prefer composition over inheritance?',
+        options: [
+          'Always — inheritance is never correct',
+          'When the relationship is "has-a" rather than "is-a" — a Pipeline HAS a Connector and a Validator, rather than a Pipeline IS a Connector',
+          'When you want faster code',
+          'Only for abstract classes',
+        ],
+        answer: 1,
+        explanation: 'Inheritance works well for "is-a" relationships (SqlPipeline IS a BasePipeline). Composition works better for "has-a" (Pipeline HAS a storage connector, HAS a schema validator). Deep inheritance chains become hard to understand and maintain. Injecting small focused components as constructor arguments (composition) keeps each component independently testable.',
       },
     ],
   },
 
   'python-concurrency': {
-    simpleExplanation: 'Concurrency lets your Python code do multiple things at once — instead of waiting for one API call to finish before starting the next, you fire off 10 simultaneously and collect all results at once.',
-    deepExplanation: `**Three concurrency models in Python**\n\n**asyncio (async/await)** — single-threaded cooperative multitasking. When your code awaits an I/O operation (network call, file read), the event loop runs another coroutine instead of blocking. This is the best model for data engineering work involving many API calls or database queries because I/O is the bottleneck, not CPU.\n\n**Threading (concurrent.futures.ThreadPoolExecutor)** — OS threads. Multiple threads share memory. Python's GIL prevents true parallel CPU execution, but threads are fine for I/O-bound work. Use when you need to call existing blocking (non-async) libraries.\n\n**Multiprocessing (concurrent.futures.ProcessPoolExecutor)** — separate processes, each with their own Python interpreter and GIL. True parallelism for CPU-bound work like heavy data transformation. More overhead than threads (process startup cost, no shared memory).\n\n**Choosing the right model**: API calls / database queries → asyncio. Blocking libraries that don't support async → ThreadPoolExecutor. CPU-intensive transformation → ProcessPoolExecutor.`,
+    simpleExplanation: 'Concurrency lets Python do many things at once — instead of calling 100 APIs one-by-one and waiting 5 minutes, you fire all 100 simultaneously and finish in 3 seconds. The right tool depends on whether you\'re waiting on the network (asyncio) or burning CPU (multiprocessing).',
+    deepExplanation: `**Why concurrency matters for Data Engineering**\nData pipelines are dominated by I/O: waiting for API responses, database queries, file transfers. Without concurrency, a pipeline that calls 200 REST endpoints sequentially (0.5s each) takes 100 seconds. With asyncio, all 200 calls fire simultaneously and finish in ~0.5s total. This is the single biggest performance improvement most beginner DE scripts need.\n\n**Python's three concurrency models**\n\n**asyncio (async/await) — single-threaded cooperative multitasking**\nPython runs a single event loop. When an async function hits await, it pauses and hands control back to the event loop, which runs another waiting coroutine. Zero OS thread overhead. Works because I/O operations block on the network/disk, not the CPU. Best for: API calls, database queries, file I/O, anything that waits for external systems. Libraries: aiohttp (HTTP), asyncpg (PostgreSQL), motor (MongoDB), aiofiles (file I/O).\n\n**Threading (ThreadPoolExecutor) — OS threads with shared memory**\nCreates actual OS threads. Multiple threads run in parallel but Python's GIL (Global Interpreter Lock) prevents two threads from executing Python bytecode simultaneously. This means threads don't help with CPU-bound work. They DO help for I/O-bound work because while one thread is waiting for a network response, others can execute Python. Best for: calling blocking (non-async) libraries that you can't change, wrapping legacy sync code.\n\n**Multiprocessing (ProcessPoolExecutor) — separate processes**\nForks separate Python processes, each with its own interpreter and GIL. True CPU parallelism. Use for CPU-heavy work: heavy pandas transformations, image processing, complex mathematical computations. Overhead: process startup is slow (100-500ms per worker), no shared memory between processes (use queues/pipes for communication).\n\n**The GIL explained clearly**\nThe GIL is a mutex that ensures only one thread executes Python bytecode at a time. This is a safety mechanism for CPython's reference counting memory management. The GIL releases during I/O operations (network waits, disk reads) — which is why threads are still useful for I/O despite the GIL. The GIL does NOT affect asyncio (single-threaded) or multiprocessing (separate interpreters).\n\n**asyncio internals: event loop and coroutines**\nCoroutines are functions defined with async def. They don't run when called — they return a coroutine object. The event loop (asyncio.run()) drives the execution. await suspends the current coroutine and schedules it to resume when the awaited operation completes. asyncio.gather() runs multiple coroutines concurrently — they all start before any of them finish.`,
     keyPoints: [
-      'async def defines a coroutine; await pauses it without blocking the event loop',
-      'asyncio.gather() runs multiple coroutines concurrently and waits for all to finish',
-      'ThreadPoolExecutor: use loop.run_in_executor() to run blocking code from async context',
-      'aiohttp for async HTTP; asyncpg for async PostgreSQL; aiobotocore for async AWS S3',
-      'Semaphore controls concurrency: asyncio.Semaphore(10) limits to 10 concurrent requests',
+      'I/O-bound (API, DB, file) → asyncio. CPU-bound (heavy transforms, math) → multiprocessing',
+      'async def declares a coroutine. await suspends it, yielding control to the event loop',
+      'asyncio.gather(*tasks) starts all coroutines concurrently and waits for all to finish',
+      'asyncio.Semaphore(10) limits concurrent requests to 10 — prevent overwhelming target APIs',
+      'ThreadPoolExecutor: use when you must call blocking (sync) library code from an async context',
+      'loop.run_in_executor(executor, blocking_func, arg) bridges sync and async worlds',
+      'asyncio.create_task() schedules a coroutine without waiting immediately — fire and forget',
+      'Never call blocking functions (requests.get, time.sleep) inside async functions — blocks entire event loop',
+      'asyncio.wait_for(coro, timeout=30) adds a timeout to any awaitable',
+      'For Jupyter: use await directly in cells (Jupyter has its own event loop running)',
     ],
     commonMistakes: [
-      'Mixing blocking calls inside async functions — this blocks the entire event loop',
-      'Using asyncio.sleep(0) as a hack instead of understanding the event loop properly',
-      'Creating a new event loop manually when one already exists (common in Jupyter)',
-      'Using multiprocessing for I/O-bound work — overkill, asyncio is better',
+      'Calling requests.get() inside an async function — blocks entire event loop, all coroutines freeze',
+      'Using time.sleep() in async code — use await asyncio.sleep() instead',
+      'No concurrency limit — firing 10,000 requests simultaneously crashes the target API and your script',
+      'asyncio.run() inside an existing event loop (Jupyter) — use await directly instead',
+      'Using multiprocessing for I/O-bound work — 10x slower than asyncio due to process startup overhead',
+      'Sharing mutable state between threads without locks — causes race conditions and data corruption',
     ],
     interviewTips: [
-      'Explain GIL and why it doesn\'t prevent asyncio from being effective for I/O',
-      'Show asyncio.gather() vs asyncio.create_task() — what\'s the difference?',
-      'Describe how you would parallelize 1000 API calls with rate limiting (Semaphore)',
-      'Explain what happens when you call a blocking function inside an async function',
+      '"What is the GIL? Does it affect asyncio?" — explain the GIL releases during I/O',
+      '"What is the difference between asyncio.gather() and asyncio.create_task()?" — both concurrently, gather waits for all',
+      '"How would you call a legacy sync function from async code?" — run_in_executor with ThreadPoolExecutor',
+      '"How would you make 1000 API calls with a maximum of 20 concurrent requests?" — Semaphore(20) + gather',
+      '"When would you choose ProcessPoolExecutor over asyncio?" — CPU-bound work, pure computation',
     ],
     bestPractices: [
-      'Use asyncio + aiohttp for all new HTTP-based ingestion pipelines',
-      'Always set a Semaphore to prevent overwhelming target APIs',
-      'Use asyncio.timeout() (Python 3.11+) or asyncio.wait_for() for per-request timeouts',
-      'Run ProcessPoolExecutor tasks for CPU-heavy transformation in parallel',
+      'Default to asyncio + aiohttp for all HTTP-based ingestion — it\'s the fastest, lowest-overhead model',
+      'Always set Semaphore concurrency limits — size based on the target API\'s rate limit',
+      'Set per-request timeouts with aiohttp.ClientTimeout — don\'t let slow requests hang forever',
+      'Use asyncio.gather(*tasks, return_exceptions=True) — collect all results including errors, don\'t abort on first failure',
+      'For CPU-heavy transforms on large datasets: PySpark (distributed) or multiprocessing locally',
+      'Profile before optimizing: asyncio may not help if your bottleneck is CPU, not I/O',
     ],
     codeExamples: [
       {
-        title: 'Parallel API ingestion with rate limiting',
+        title: 'asyncio: fetch 1000 APIs concurrently with Semaphore rate limiting',
         language: 'python',
-        description: 'Fetch 100 endpoints concurrently, max 10 at a time',
         code: `import asyncio
 import aiohttp
+import logging
+from dataclasses import dataclass
 
-async def fetch_one(session: aiohttp.ClientSession, url: str, sem: asyncio.Semaphore) -> dict:
-    async with sem:  # max 10 concurrent requests
-        async with session.get(url) as r:
-            r.raise_for_status()
-            return await r.json()
+logger = logging.getLogger(__name__)
 
-async def fetch_all(urls: list[str], concurrency: int = 10) -> list[dict]:
-    sem = asyncio.Semaphore(concurrency)
+@dataclass
+class FetchResult:
+    url: str
+    data: dict | None
+    error: str | None = None
+
+async def fetch_one(
+    session: aiohttp.ClientSession,
+    url: str,
+    sem: asyncio.Semaphore,
+) -> FetchResult:
+    async with sem:  # Acquire semaphore slot — max 20 concurrent
+        try:
+            timeout = aiohttp.ClientTimeout(total=30)
+            async with session.get(url, timeout=timeout) as response:
+                response.raise_for_status()
+                data = await response.json()
+                return FetchResult(url=url, data=data)
+        except Exception as e:
+            logger.warning(f"Failed {url}: {e}")
+            return FetchResult(url=url, data=None, error=str(e))
+
+async def fetch_many(urls: list[str], max_concurrent: int = 20) -> list[FetchResult]:
+    sem = asyncio.Semaphore(max_concurrent)
     async with aiohttp.ClientSession() as session:
         tasks = [fetch_one(session, url, sem) for url in urls]
-        results = await asyncio.gather(*tasks, return_exceptions=True)
-    # Filter out errors
-    return [r for r in results if not isinstance(r, Exception)]
+        results = await asyncio.gather(*tasks)  # All run concurrently, bounded by semaphore
+    successes = [r for r in results if r.error is None]
+    failures  = [r for r in results if r.error is not None]
+    logger.info(f"Fetched {len(successes)} OK, {len(failures)} failed")
+    return results
 
-urls = [f"https://api.example.com/data/{i}" for i in range(100)]
-results = asyncio.run(fetch_all(urls))
-print(f"Fetched {len(results)} records")`,
+# 1000 calls, max 20 at a time
+urls = [f"https://api.example.com/entity/{i}" for i in range(1000)]
+results = asyncio.run(fetch_many(urls, max_concurrent=20))`,
+      },
+      {
+        title: 'ThreadPoolExecutor: parallelize blocking database calls',
+        language: 'python',
+        code: `from concurrent.futures import ThreadPoolExecutor, as_completed
+import pyodbc  # Blocking sync library — can't use asyncio with it
+
+def query_one_source(conn_str: str, table: str) -> list[dict]:
+    """Blocking ODBC query — runs in a thread."""
+    with pyodbc.connect(conn_str) as conn:
+        cursor = conn.cursor()
+        cursor.execute(f"SELECT * FROM {table} WHERE updated_at > DATEADD(hour,-1,GETDATE())")
+        cols = [c[0] for c in cursor.description]
+        return [dict(zip(cols, row)) for row in cursor.fetchall()]
+
+sources = [
+    ("DRIVER={SQL Server};SERVER=srv1;DATABASE=crm", "customers"),
+    ("DRIVER={SQL Server};SERVER=srv2;DATABASE=erp", "orders"),
+    ("DRIVER={SQL Server};SERVER=srv3;DATABASE=hr",  "employees"),
+]
+
+all_data = {}
+# 3 parallel threads — each runs query_one_source simultaneously
+with ThreadPoolExecutor(max_workers=3) as executor:
+    future_to_table = {
+        executor.submit(query_one_source, conn, table): table
+        for conn, table in sources
+    }
+    for future in as_completed(future_to_table):
+        table = future_to_table[future]
+        try:
+            rows = future.result(timeout=60)
+            all_data[table] = rows
+            print(f"{table}: {len(rows)} rows")
+        except Exception as e:
+            print(f"{table} failed: {e}")`,
+      },
+      {
+        title: 'ProcessPoolExecutor: CPU-heavy transformation in parallel',
+        language: 'python',
+        code: `from concurrent.futures import ProcessPoolExecutor
+import pandas as pd
+import json
+
+def transform_partition(partition_path: str) -> dict:
+    """Runs in a separate process — CPU work, true parallelism."""
+    df = pd.read_parquet(partition_path)
+    # Heavy CPU transformation
+    df["revenue_usd"] = df["amount"] * df["exchange_rate"]
+    df["customer_tier"] = pd.cut(df["revenue_usd"],
+                                  bins=[0, 100, 1000, float("inf")],
+                                  labels=["bronze", "silver", "gold"])
+    output_path = partition_path.replace("/raw/", "/processed/")
+    df.to_parquet(output_path)
+    return {"partition": partition_path, "rows": len(df), "output": output_path}
+
+partitions = [f"data/raw/orders_part_{i:04d}.parquet" for i in range(50)]
+
+# 50 files processed across 8 CPU cores simultaneously
+with ProcessPoolExecutor(max_workers=8) as executor:
+    results = list(executor.map(transform_partition, partitions))
+
+total_rows = sum(r["rows"] for r in results)
+print(f"Processed {len(results)} partitions, {total_rows:,} total rows")`,
       },
     ],
     resources: [
-      { title: 'asyncio official docs', url: 'https://docs.python.org/3/library/asyncio.html', type: 'docs', free: true },
-      { title: 'concurrent.futures docs', url: 'https://docs.python.org/3/library/concurrent.futures.html', type: 'docs', free: true },
-      { title: 'aiohttp docs', url: 'https://docs.aiohttp.org/en/stable/', type: 'docs', free: true },
+      { title: 'asyncio — official Python docs', url: 'https://docs.python.org/3/library/asyncio.html', type: 'docs', free: true },
+      { title: 'concurrent.futures — official Python docs', url: 'https://docs.python.org/3/library/concurrent.futures.html', type: 'docs', free: true },
+      { title: 'aiohttp documentation', url: 'https://docs.aiohttp.org/en/stable/', type: 'docs', free: true },
+      { title: 'Real Python — Async IO in Python (deep dive)', url: 'https://realpython.com/async-io-python/', type: 'tutorial', free: true },
+      { title: 'Real Python — Python Concurrency (threading, asyncio, multiprocessing)', url: 'https://realpython.com/python-concurrency/', type: 'tutorial', free: true },
+      { title: 'Real Python — Python GIL explained', url: 'https://realpython.com/python-gil/', type: 'tutorial', free: true },
+      { title: 'Python asyncio — Corey Schafer (YouTube)', url: 'https://www.youtube.com/watch?v=t5Bo1Je9EmE', type: 'video', free: true },
+      { title: 'AsyncIO — Sentdex (YouTube)', url: 'https://www.youtube.com/watch?v=BI0asZuqFXs', type: 'video', free: true },
+      { title: 'asyncpg — async PostgreSQL', url: 'https://magicstack.github.io/asyncpg/current/', type: 'docs', free: true },
     ],
     quiz: [
       {
-        question: 'What happens if you call requests.get() inside an async function?',
+        question: 'What happens if you call requests.get("https://api.example.com") inside an async function without await?',
         options: [
-          'It works fine — Python handles the conversion automatically',
-          'It blocks the entire event loop, preventing all other coroutines from running',
-          'It raises a RuntimeError immediately',
+          'Python automatically converts it to an async call',
+          'It blocks the entire event loop thread — all other coroutines are frozen until the HTTP response arrives',
+          'It raises an error because requests is not async',
           'It runs in a background thread automatically',
         ],
         answer: 1,
-        explanation: 'requests.get() is a blocking call. Inside an async function, it blocks the event loop thread entirely, freezing all other coroutines. Use aiohttp instead, or wrap with loop.run_in_executor() if you must use blocking code.',
+        explanation: 'requests.get() is a synchronous blocking call. Inside an async function, there is no await — Python executes it directly, which blocks the event loop\'s single thread. All other coroutines that are "waiting" cannot resume until requests.get() returns. Fix: use aiohttp with await, or use await loop.run_in_executor(None, requests.get, url) to run it in a thread pool.',
+      },
+      {
+        question: 'You need to process 500 parquet files with a heavy pandas transformation on each. Which concurrency model is most appropriate?',
+        options: [
+          'asyncio — fastest concurrency model',
+          'ProcessPoolExecutor — CPU-bound work benefits from true parallelism across multiple CPU cores',
+          'ThreadPoolExecutor — threads are easier to use',
+          'No concurrency needed — Python is fast enough',
+        ],
+        answer: 1,
+        explanation: 'Heavy pandas transformation is CPU-bound (not I/O-bound). asyncio and threads are both limited by the GIL for CPU work — they cannot run Python code in parallel. ProcessPoolExecutor spawns separate processes, each with its own GIL, achieving true CPU parallelism. 8 cores = ~8x speedup on CPU-intensive work.',
       },
     ],
   },
 
   'linux-shell': {
-    simpleExplanation: 'Linux and shell scripting are the operating system tools every data engineer needs to debug servers, schedule jobs, move files, and automate repetitive tasks on the machines where your pipelines run.',
-    deepExplanation: `**Why Linux matters for Data Engineers**\n\nMost Azure VMs, Databricks clusters, and container images run Linux. When a Self-Hosted Integration Runtime (SHIR) crashes at 2AM, you SSH in and debug it from the command line. When a Spark job runs out of disk space, you check partitions with df -h. Linux fluency is not optional for senior engineers.\n\n**The essential toolkit**\nNavigating the filesystem (cd, ls, find), reading files (cat, less, head, tail), searching text (grep, awk, sed), process management (ps, kill, top), permissions (chmod, chown), and scheduling (cron) cover 90% of daily DE Linux work.\n\n**Shell scripting for automation**\nBash scripts let you combine commands into reusable programs. You use them to automate backups, rotate logs, trigger Python scripts on a schedule, and wrap CLI tools like az, databricks, and adf.\n\n**SSH and remote access**\nSSH key pairs (ssh-keygen, ssh-copy-id) are how you securely connect to VMs. Understanding ~/.ssh/config makes managing multiple servers much easier.`,
+    simpleExplanation: 'Linux is the OS that runs almost everything in data engineering — Azure VMs, Databricks clusters, Docker containers. Shell scripting automates the tasks that would otherwise take hours of manual clicking: log rotation, scheduled jobs, server diagnostics, and deployment scripts.',
+    deepExplanation: `**Why every Data Engineer must know Linux**\nDatabricks cluster nodes run Ubuntu. Azure VMs run Ubuntu or RHEL. Docker containers are Linux. The Self-Hosted Integration Runtime (SHIR) runs on a Linux VM. When something breaks at 2AM, you SSH in and debug from a terminal — the GUI won't help you. Linux fluency is the floor for senior DE roles, not an optional extra.\n\n**The essential command categories**\n\n**Navigation**: cd (change directory), ls -la (list with hidden files + permissions), pwd (current directory), pushd/popd (bookmark and return to directories). \n\n**File operations**: cp, mv, rm (with -i to prompt), mkdir -p (create parent dirs too), ln -s (symlinks), stat (file metadata including timestamps).\n\n**Text processing** — the most powerful DE tools: cat (concatenate/print), head/tail (first/last N lines), grep (pattern search), awk (column-oriented processing), sed (stream editor for find/replace), cut (extract columns), sort, uniq -c (count unique), wc -l (line count). These tools chain via pipes (|) — the Unix philosophy of small tools that do one thing well.\n\n**Processes**: ps aux (all running processes), top/htop (real-time CPU/memory), kill/pkill (terminate processes), nohup (run after logout), jobs/fg/bg (background tasks).\n\n**Disk and filesystem**: df -h (disk space by filesystem), du -sh * (directory sizes), lsblk (block devices), mount/umount (attach/detach filesystems).\n\n**Networking**: curl (HTTP requests from command line), wget (file downloads), netstat/ss (open connections), lsof -i :8080 (what's on port 8080), ping, traceroute, nslookup.\n\n**Permissions**: chmod (change mode), chown (change owner), sudo (run as root), groups (user group membership). The octal permission system: 7=rwx, 6=rw-, 5=r-x, 4=r--.\n\n**Bash scripting**\nBash scripts are executable text files that run commands sequentially. Variables ($VAR), conditionals (if/then/fi), loops (for x in list; do ... done), functions, and error handling (set -euo pipefail, trap) make scripts robust. Always prefer Python for complex logic — use bash for simple orchestration and OS-level automation.\n\n**cron — scheduled task execution**\ncrontab -e opens the cron schedule. Format: "minute hour day-of-month month day-of-week command". Always redirect output: 0 2 * * * /scripts/ingest.sh >> /var/log/ingest.log 2>&1. Use absolute paths — cron runs with a minimal $PATH that doesn't include /usr/local/bin.\n\n**SSH and remote management**\nSSH key pairs eliminate password prompts. ssh-keygen -t ed25519 creates a key pair. ssh-copy-id user@server copies the public key to the remote server. ~/.ssh/config aliases complex SSH commands (Host myvm / HostName 10.0.0.5 / User ubuntu / IdentityFile ~/.ssh/my_key). Use tmux for sessions that survive disconnections.`,
     keyPoints: [
-      'grep -r "pattern" /path searches recursively — add -i for case insensitive',
-      'awk \'{print $1}\' splits by whitespace and prints field 1 — powerful for log parsing',
-      'find /path -name "*.log" -mtime +7 finds log files older than 7 days',
-      'crontab -e opens the cron editor; "0 2 * * *" means daily at 2AM',
-      'chmod 755 file = owner rwx, group r-x, others r-x — know the octal notation',
-      'tail -f /var/log/app.log follows a log file in real time — essential for debugging',
+      'grep -r "ERROR" /var/log/ recursively finds ERROR in all logs. Add -i for case-insensitive, -n for line numbers',
+      'awk \'{print $1, $5}\' prints columns 1 and 5 (space-delimited). awk -F: for custom delimiter',
+      'sed \'s/old/new/g\' file replaces all occurrences of old with new in file output',
+      'find /data -name "*.log" -mtime +7 -delete finds and deletes logs older than 7 days',
+      'crontab format: "0 2 * * *" = every day at 2:00 AM. "*/15 * * * *" = every 15 minutes',
+      'chmod 644 file = owner rw, group r, others r. chmod 755 = owner rwx, group rx, others rx',
+      'tail -f /var/log/app.log follows a file as it grows — ctrl+c to stop. Add grep for filtering',
+      'ps aux | grep python shows all running Python processes with their PIDs',
+      'df -h shows disk usage by filesystem. du -sh /data/* shows size of each subdirectory',
+      'ssh-keygen -t ed25519 -C "comment" creates a modern SSH key pair for password-free login',
     ],
     commonMistakes: [
-      'Running rm -rf as root without double-checking the path — destroys data instantly',
-      'Not using quotes around variables in scripts: $VAR should be "$VAR" to handle spaces',
-      'Forgetting set -e and set -u in bash scripts — errors pass silently without them',
-      'Writing cron paths without absolute paths — cron runs with a minimal $PATH',
+      'rm -rf /data/processed/ with a typo in the path — permanently deletes data. Always dry-run with ls first',
+      'Using relative paths in cron scripts — cron runs from $HOME with minimal $PATH. Always use absolute paths',
+      'Not quoting variables: rm $FILE fails if $FILE has spaces. Always use rm "$FILE"',
+      'Forgetting set -euo pipefail — bash silently continues after errors without it',
+      'Running scripts as root when not needed — principle of least privilege applies to Linux too',
+      'Not redirecting cron output — failed jobs produce no notification: add >> /log/file.log 2>&1',
     ],
     interviewTips: [
-      'Know how to check disk usage (df -h) and which process is using most CPU/memory (top, htop)',
-      'Be able to write a bash script that runs a Python script and emails on failure',
-      'Explain file permissions: what does chmod 644 mean?',
-      'Know how to find which process is listening on a port: lsof -i :8080',
+      '"How would you find which process is consuming the most memory?" — ps aux --sort=-%mem | head',
+      '"What does chmod 755 mean?" — owner rwx, group r-x, others r-x. Know octal notation',
+      '"Write a cron job that runs a Python script daily at 3AM and logs output"',
+      '"How do you check why a server has no disk space?" — df -h then du -sh /* to find the culprit',
+      '"What is a symlink and when would you use one in a data pipeline?"',
     ],
     bestPractices: [
-      'Always start bash scripts with #!/bin/bash and set -euo pipefail',
-      'Use ssh-agent and key pairs instead of passwords for SSH access',
-      'Log output of cron jobs: 0 2 * * * /script.sh >> /var/log/script.log 2>&1',
-      'Use tmux or screen for long-running sessions over SSH — disconnect-safe',
+      'Every production bash script: #!/bin/bash on line 1 and set -euo pipefail on line 2',
+      'Use trap cleanup EXIT for resource cleanup even when scripts fail unexpectedly',
+      'SSH: use ed25519 keys, disable password auth in /etc/ssh/sshd_config, use ~/.ssh/config for aliases',
+      'Use tmux for long-running operations over SSH — your work survives disconnects',
+      'Log cron output to a dated log file: >> /var/log/myscript/$(date +%Y%m%d).log 2>&1',
+      'For complex automation, prefer Python over bash — easier to test, debug, and maintain',
     ],
     codeExamples: [
       {
-        title: 'Production bash script template',
+        title: 'Production bash script template with error handling',
         language: 'bash',
-        description: 'The safest way to write scripts that run in production',
         code: `#!/bin/bash
-set -euo pipefail  # Exit on error, undefined var, pipe failure
+set -euo pipefail  # -e: exit on error | -u: error on unset vars | -o pipefail: pipe errors
 
-# Configuration
-SCRIPT_DIR="$(cd "$(dirname "\${BASH_SOURCE[0]}")" && pwd)"
-LOG_FILE="/var/log/data-pipeline/$(date +%Y%m%d).log"
-PYTHON_SCRIPT="$SCRIPT_DIR/ingest.py"
+readonly SCRIPT_DIR="$(cd "$(dirname "\${BASH_SOURCE[0]}")" && pwd)"
+readonly LOG_DIR="/var/log/de-platform"
+readonly LOG_FILE="$LOG_DIR/ingest_$(date +%Y%m%d_%H%M%S).log"
+readonly LOCK_FILE="/tmp/ingest.lock"
 
-log() { echo "[$(date '+%Y-%m-%d %H:%M:%S')] $*" | tee -a "$LOG_FILE"; }
+mkdir -p "$LOG_DIR"
 
+log()   { echo "[$(date '+%Y-%m-%d %H:%M:%S')] INFO  $*" | tee -a "$LOG_FILE"; }
+error() { echo "[$(date '+%Y-%m-%d %H:%M:%S')] ERROR $*" | tee -a "$LOG_FILE" >&2; }
+
+# Cleanup function — always runs on exit (success or failure)
 cleanup() {
-  log "Script exiting with status $?"
+    local exit_code=$?
+    rm -f "$LOCK_FILE"
+    if [ $exit_code -ne 0 ]; then
+        error "Script failed with exit code $exit_code"
+        # Could add: mail -s "Pipeline failed" ops@company.com < "$LOG_FILE"
+    fi
+    log "Script finished"
 }
 trap cleanup EXIT
 
-log "Starting pipeline..."
-python3 "$PYTHON_SCRIPT" --config "$SCRIPT_DIR/config.yaml"
+# Prevent overlapping runs
+if [ -f "$LOCK_FILE" ]; then
+    error "Another instance is running (lock file: $LOCK_FILE). Exiting."
+    exit 1
+fi
+touch "$LOCK_FILE"
+
+# --- Main logic ---
+log "Starting ingestion pipeline"
+log "Script dir: $SCRIPT_DIR"
+
+# Check required env vars are set (set -u catches unset ones, but check explicitly for nicer error)
+: "\${STORAGE_ACCOUNT:?'STORAGE_ACCOUNT env var must be set'}"
+: "\${DB_PASSWORD:?'DB_PASSWORD env var must be set'}"
+
+log "Running Python ingestion..."
+python3 "$SCRIPT_DIR/ingest.py" \
+    --storage-account "$STORAGE_ACCOUNT" \
+    --log-file "$LOG_FILE"
+
 log "Pipeline completed successfully"`,
       },
       {
-        title: 'Log analysis with grep and awk',
+        title: 'Text processing: log analysis with grep, awk, sed',
         language: 'bash',
-        code: `# Find all ERROR lines in the last hour
-grep "ERROR" /var/log/app.log | tail -100
+        code: `# --- grep: pattern searching ---
+# Find all ERROR lines in logs from today
+grep "ERROR" /var/log/app/$(date +%Y%m%d).log
 
-# Count errors by type
-awk '/ERROR/ {print $5}' app.log | sort | uniq -c | sort -rn
+# Find lines matching either pattern (-E for extended regex)
+grep -E "ERROR|CRITICAL" /var/log/app.log
 
-# Find files over 1GB
-find /data -size +1G -type f -ls
+# Count matching lines (-c), show surrounding context (-A 3 = 3 lines after)
+grep -c "pipeline failed" /var/log/app.log
+grep -A 3 "OutOfMemoryError" /var/log/spark/driver.log
 
-# Show top 10 disk-consuming directories
-du -sh /data/* | sort -rh | head -10
+# --- awk: column processing ---
+# Parse space-separated log: print timestamp and message from ERROR lines
+awk '/ERROR/ {print $1, $2, substr($0, index($0,$5))}' app.log
 
-# Real-time log following with filter
-tail -f /var/log/spark/driver.log | grep -v "INFO"`,
+# Sum a column (e.g., bytes transferred in an access log)
+awk '{sum += $10} END {print "Total bytes:", sum}' access.log
+
+# --- sed: find and replace ---
+# Replace all occurrences of old_server with new_server in config
+sed -i 's/old-server.azure.com/new-server.azure.com/g' pipeline.conf
+
+# Delete lines containing "DEBUG" from a log file
+sed '/DEBUG/d' verbose.log > cleaned.log
+
+# --- Chained pipeline: top 5 most common error messages ---
+grep "ERROR" /var/log/app.log \
+  | awk '{print $5}' \
+  | sort \
+  | uniq -c \
+  | sort -rn \
+  | head -5`,
+      },
+      {
+        title: 'SSH config, tmux, and cron setup',
+        language: 'bash',
+        code: `# --- SSH key setup ---
+# Generate modern ed25519 key
+ssh-keygen -t ed25519 -C "de-engineer@company.com" -f ~/.ssh/de_key
+
+# Copy public key to remote server (enables password-free login)
+ssh-copy-id -i ~/.ssh/de_key.pub ubuntu@10.0.1.50
+
+# ~/.ssh/config — alias complex SSH commands
+cat >> ~/.ssh/config << 'EOF'
+Host shir-vm
+    HostName 10.0.1.50
+    User ubuntu
+    IdentityFile ~/.ssh/de_key
+    ServerAliveInterval 60
+
+Host databricks-driver
+    HostName 20.55.100.200
+    User root
+    Port 2200
+    IdentityFile ~/.ssh/databricks_key
+EOF
+
+ssh shir-vm  # Now works without specifying all parameters
+
+# --- tmux: sessions that survive disconnection ---
+tmux new -s pipeline-job     # Create named session
+# ... run long job ...
+# Ctrl+B then D to detach (job keeps running)
+tmux attach -t pipeline-job  # Re-attach from anywhere
+
+# --- cron setup ---
+crontab -e
+# Add these lines:
+# Run ingestion daily at 2:00 AM
+# 0 2 * * * /opt/de-platform/scripts/ingest.sh >> /var/log/de-platform/cron.log 2>&1
+#
+# Run cleanup every Sunday at midnight
+# 0 0 * * 0 find /tmp/de-staging -mtime +1 -delete >> /var/log/cleanup.log 2>&1
+
+# Verify cron entries
+crontab -l`,
       },
     ],
     resources: [
-      { title: 'Linux Command Line (free book)', url: 'https://linuxcommand.org/tlcl.php', type: 'book', free: true },
-      { title: 'Bash Reference Manual', url: 'https://www.gnu.org/software/bash/manual/', type: 'docs', free: true },
-      { title: 'explainshell.com', url: 'https://explainshell.com', type: 'docs', free: true },
+      { title: 'The Linux Command Line (free book — William Shotts)', url: 'https://linuxcommand.org/tlcl.php', type: 'book', free: true },
+      { title: 'Bash Reference Manual (GNU)', url: 'https://www.gnu.org/software/bash/manual/bash.html', type: 'docs', free: true },
+      { title: 'explainshell.com — explains any shell command', url: 'https://explainshell.com', type: 'tool', free: true },
+      { title: 'Linux Journey — interactive learning', url: 'https://linuxjourney.com', type: 'tutorial', free: true },
+      { title: 'OverTheWire: Bandit — Linux learning game', url: 'https://overthewire.org/wargames/bandit/', type: 'practice', free: true },
+      { title: 'Bash scripting cheatsheet', url: 'https://devhints.io/bash', type: 'docs', free: true },
+      { title: 'crontab.guru — cron expression editor', url: 'https://crontab.guru', type: 'tool', free: true },
+      { title: 'NetworkChuck — Linux for beginners (YouTube)', url: 'https://www.youtube.com/@NetworkChuck', type: 'video', free: true },
+      { title: 'freeCodeCamp — Linux Command Line Full Course (YouTube)', url: 'https://www.youtube.com/watch?v=ZtqBQ68cfJc', type: 'video', free: true },
+      { title: 'tldr pages — simplified man pages', url: 'https://tldr.sh', type: 'tool', free: true },
+      { title: 'ShellCheck — shell script linter', url: 'https://www.shellcheck.net', type: 'tool', free: true },
     ],
     quiz: [
       {
-        question: 'What does set -euo pipefail do at the top of a bash script?',
+        question: 'What does set -euo pipefail do in a bash script, and why is each flag important?',
         options: [
-          'Sets environment variables for the script',
-          'Exits on any error (-e), treats unset variables as errors (-u), and makes pipe failures visible (-o pipefail)',
-          'Enables verbose mode',
-          'Sets file permissions',
+          'Sets environment variables; not important for safety',
+          '-e exits the script on any command failure, -u treats unset variables as errors instead of empty strings, -o pipefail makes the pipe return the first failed command\'s exit code instead of the last command\'s',
+          'Enables verbose mode for debugging',
+          'Sets file permissions and user context',
         ],
         answer: 1,
-        explanation: 'Without set -e, bash silently continues after errors. Without -u, unset variables expand to empty strings causing subtle bugs. Without pipefail, a failed command in a pipe (cmd1 | cmd2) is invisible because the pipe returns cmd2\'s exit code.',
+        explanation: 'Without -e, bash silently continues after errors (a copy command fails, but the next command runs anyway). Without -u, rm -rf "$UNDEFINED_VAR/important" expands to rm -rf "/important" — catastrophic. Without pipefail, grep "pattern" /log | process_results exits 0 even if grep fails (no matches). These three flags together make bash scripts behave like a real programming language.',
+      },
+      {
+        question: 'You need to find all .parquet files larger than 500MB modified in the last 24 hours. What command do you use?',
+        options: [
+          'ls -la *.parquet',
+          'find /data -name "*.parquet" -size +500M -mtime -1',
+          'grep -r ".parquet" /data',
+          'du -sh /data/*.parquet | sort -rh',
+        ],
+        answer: 1,
+        explanation: 'find combines multiple criteria: -name "*.parquet" matches the filename pattern, -size +500M means more than 500 megabytes, -mtime -1 means modified less than 1 day ago. The results show the full path to each matching file. Add -ls at the end to see file details.',
       },
     ],
   },
 
   'git-version-control': {
-    simpleExplanation: 'Git is the save-and-share system for code — it tracks every change you make, lets you work on separate features without breaking each other\'s work, and enables you to roll back any mistake in seconds.',
-    deepExplanation: `**Git fundamentals for data engineers**\n\nGit tracks changes by storing snapshots (commits) of your project. Every commit has a unique hash, a message, and a pointer to its parent. This chain of commits is your project's entire history.\n\n**Branching strategy**\nIn professional teams, you never commit directly to main. You create a feature branch, make your changes, open a Pull Request (PR), get code reviewed, and merge. This protects main from broken code and enables parallel development.\n\n**Merging vs Rebasing**\nMerge creates a merge commit preserving all branch history. Rebase replays your commits on top of main giving a linear history. Most teams use merge for shared branches and rebase for keeping feature branches up to date.\n\n**ADF and Databricks with Git**\nADF integrates with Azure Repos — every pipeline change is saved as JSON in Git. Databricks Repos syncs notebooks with Git. This means your data pipelines follow the same review and CI/CD process as application code.`,
+    simpleExplanation: 'Git is the version control system that every professional uses — it saves every change you make, lets multiple engineers work on the same project without overwriting each other, and lets you undo any mistake instantly. It\'s mandatory for all DE work.',
+    deepExplanation: `**How Git actually works under the hood**\nGit stores your project as a series of snapshots called commits. Each commit contains the complete state of all tracked files, plus a pointer to its parent commit. This chain forms the project history. The HEAD pointer shows your current position in history. Branches are just lightweight pointers to a commit — creating a branch costs nothing and takes milliseconds.\n\n**The three trees model**\nUnderstanding Git requires understanding three "trees": Working Directory (the files you see on disk), Staging Area / Index (changes you've run git add on — staged for next commit), Repository / HEAD (what's in the last commit). git status compares Working Directory vs Staging Area. git diff --staged compares Staging Area vs Repository.\n\n**Branching and merging**\nBranches enable parallel development without interference. You create a feature branch from main, make commits, and merge back when done. Merge creates a merge commit that joins the two branch histories. The resulting history shows exactly when branches diverged and merged.\n\n**Rebasing — linear history**\nRebase takes your branch's commits and replays them on top of another branch. Instead of a merge commit that says "these branches joined here," rebase creates a straight linear history. Use rebase to keep your feature branch up to date with main before merging. Never rebase a shared branch — it rewrites history and breaks others' copies.\n\n**The golden rule of Git**\nNever rewrite history on a branch that others have pulled. git reset --hard and git push --force on a shared branch break everyone else's local copy. Use git revert instead — it undoes changes with a new commit, preserving history.\n\n**Pre-commit hooks for data engineering**\nPre-commit hooks run scripts before every commit. Use them to: scan for secrets (detect-secrets, gitleaks), run linting (ruff, flake8), format code (black, isort), run fast unit tests. This catches issues before they reach the repo — much cheaper to fix at commit time than after a PR review.\n\n**Git in ADF, Databricks, and dbt**\nADF: connect to Azure Repos and every pipeline JSON file is versioned. Developers work on feature branches; publish to adf_publish only after PR merge. Databricks: Repos feature syncs notebooks with Git. dbt: all .sql files and schema.yml live in Git — branching strategy identical to application code. This unification of data pipeline code with Git is the foundation of DataOps.`,
     keyPoints: [
-      'git status, git diff, git log --oneline are your most-used daily commands',
-      'git stash saves uncommitted changes temporarily so you can switch branches',
-      'git reset --hard HEAD~1 deletes the last commit permanently — use with caution',
-      'git revert <hash> creates a new commit that undoes a change — safe for shared branches',
-      '.gitignore should exclude: .env files, __pycache__, *.pyc, .venv, *.tfstate',
-      'Commit messages: use imperative mood: "Add watermark logic" not "Added" or "Adding"',
+      'git status shows working tree state. git diff shows unstaged changes. git diff --staged shows staged changes',
+      'git add -p (patch mode) stages changes hunk by hunk — make focused commits, not "everything at once"',
+      'git commit --amend changes the last commit message or adds forgotten changes — only before pushing',
+      'git stash / git stash pop: temporarily shelve uncommitted work to switch branches',
+      'git log --oneline --graph --all: visual ASCII branch history — essential for understanding merge history',
+      'git cherry-pick <hash>: apply a single commit from one branch to another without merging everything',
+      'git bisect: binary search through history to find which commit introduced a bug',
+      'git revert <hash>: creates a new undo commit — safe on shared branches. Never use reset --hard on shared branches',
+      'Branch naming convention: feature/add-watermark, fix/null-handling-orders, chore/update-deps',
+      'Protect main: require PR + 1 reviewer + CI passing. Direct push to main = mistake waiting to happen',
     ],
     commonMistakes: [
-      'Committing secrets (.env files, API keys, connection strings) to the repo',
-      'Making huge commits with 50 changed files — small focused commits are much easier to review',
-      'Not pulling before pushing, causing unnecessary merge conflicts',
-      'Deleting branches before merging — you lose all history of that work',
+      'Committing .env files with real credentials — use git-secrets or pre-commit hooks to prevent this',
+      'Giant commits with 50 files changed — impossible to review, impossible to revert selectively',
+      'git push --force on a shared branch — rewrites history for everyone who pulled it',
+      'Resolving merge conflicts by accepting "all mine" or "all theirs" without reading both sides',
+      'Not using .gitignore from day one — adding it later leaves already-tracked files in history',
+      'Committing generated files (*.pyc, __pycache__, .terraform/) — bloats repo and causes spurious diffs',
     ],
     interviewTips: [
-      'Explain the difference between git merge and git rebase',
-      'How do you resolve a merge conflict? Walk through the steps',
-      'What is git cherry-pick and when would you use it?',
-      'Explain the Gitflow branching strategy and why it\'s used in DE teams',
+      '"What is the difference between git merge and git rebase?" — merge commits vs linear history, when to use each',
+      '"How do you resolve a merge conflict?" — walk through: git fetch, identify conflicts, edit files, git add, git commit',
+      '"What is git cherry-pick and give a real-world use case?" — apply a hotfix from main to a release branch',
+      '"What is the difference between git reset --soft, --mixed, and --hard?" — soft: keep staged, mixed: unstage, hard: discard',
+      '"How would you find which commit introduced a specific bug?" — git bisect start, mark good/bad, binary search',
     ],
     bestPractices: [
-      'Use git hooks (pre-commit) to run linting and secret scanning before every commit',
-      'Set up .gitignore before your first commit — adding it later is messy',
-      'Use signed commits (git config commit.gpgsign true) for auditable pipelines',
-      'Use branch protection rules on main: require PR + 1 reviewer before merging',
+      'Install pre-commit (pip install pre-commit) and configure .pre-commit-config.yaml in every repo',
+      'Never commit to main directly — always use feature branches and PRs, even for solo projects',
+      'Write meaningful commit messages: imperative mood, 50 chars max subject, why not what in body',
+      'Use Conventional Commits format: feat:, fix:, chore:, refactor: — enables automatic changelogs',
+      'Branch protection on main: 1 required reviewer + all status checks passing before merge',
+      'GPG-sign commits (git config --global commit.gpgsign true) for auditable DE pipelines',
     ],
     codeExamples: [
       {
-        title: 'Essential git workflow',
+        title: 'Daily professional Git workflow',
         language: 'bash',
-        code: `# Daily workflow
-git checkout -b feature/add-watermark-logic  # Create feature branch
-git add src/pipelines/watermark.py           # Stage specific files
-git commit -m "Add watermark pattern for incremental loads"
-git push -u origin feature/add-watermark-logic  # Push and set upstream
+        code: `# --- Starting new work ---
+git checkout main
+git pull --rebase origin main          # Get latest, apply on top of your commits cleanly
+git checkout -b feature/watermark-ingestion   # Create feature branch
 
-# Keep branch up to date with main
+# --- Working and committing ---
+# Make changes to files...
+git status                             # See what changed
+git diff src/pipelines/ingest.py      # Review specific file changes
+git add src/pipelines/ingest.py       # Stage specific file (not git add .)
+git add -p src/pipelines/config.py    # Stage changes hunk by hunk for focused commits
+git commit -m "feat: add watermark pattern to orders ingestion
+
+Adds high-water mark tracking to prevent reprocessing already-loaded rows.
+Uses last_updated_at column as watermark key.
+
+Closes #142"
+
+# --- Staying current with main ---
 git fetch origin
-git rebase origin/main
+git rebase origin/main                # Replay your commits on top of latest main
+# If rebase conflicts arise: edit file → git add → git rebase --continue
 
-# Undo last commit (keep changes staged)
-git reset --soft HEAD~1
+# --- Code review prep ---
+git log origin/main..HEAD --oneline   # See only your commits (not in main yet)
+git diff origin/main...HEAD           # See all changes vs main
+git push -u origin feature/watermark-ingestion
 
-# Undo changes to a specific file
-git checkout -- src/config.py
-
-# View history as a graph
-git log --oneline --graph --all`,
+# --- After PR is merged ---
+git checkout main
+git pull --rebase
+git branch -d feature/watermark-ingestion    # Delete local branch
+git remote prune origin                       # Clean up remote tracking refs`,
       },
       {
-        title: '.gitignore for a DE Python project',
+        title: 'Undoing mistakes safely',
         language: 'bash',
-        code: `# Python
-__pycache__/
-*.py[cod]
-.venv/
-.env
-*.egg-info/
+        code: `# --- Undo staged changes (not committed yet) ---
+git restore --staged src/config.py       # Unstage (modern syntax, replaces git reset HEAD)
+git restore src/config.py               # Discard working directory changes (PERMANENT)
 
-# Secrets & credentials
-*.json.key
-credentials.json
-service_account*.json
+# --- Undo the last commit (not yet pushed) ---
+git reset --soft HEAD~1                  # Undo commit, keep changes staged
+git reset --mixed HEAD~1                 # Undo commit, keep changes unstaged (default)
+git reset --hard HEAD~1                  # Undo commit AND discard changes (PERMANENT)
 
-# Terraform
-*.tfstate
-*.tfstate.backup
-.terraform/
+# --- Undo a commit that IS already pushed (safe) ---
+git revert abc1234                       # Creates new commit that undoes abc1234
+git push                                 # Push the revert commit — history preserved
 
-# IDE
-.vscode/settings.json
-.idea/
+# --- Find a lost commit (even after reset --hard) ---
+git reflog                               # Shows all recent HEAD movements
+git checkout abc1234                     # Recover a specific commit by hash
+git checkout -b recovered-work           # Save it as a new branch
 
-# Data files (never commit raw data)
-data/
-*.csv
-*.parquet`,
+# --- Bisect to find which commit broke something ---
+git bisect start
+git bisect bad                           # Current commit is broken
+git bisect good v1.2.0                   # v1.2.0 was working
+# Git checks out midpoint commit — test it
+git bisect good                          # or: git bisect bad
+# Repeat until: "abc1234 is the first bad commit"
+git bisect reset`,
+      },
+      {
+        title: 'pre-commit hooks setup for a DE project',
+        language: 'yaml',
+        code: `# .pre-commit-config.yaml — runs before every git commit
+repos:
+  # Secret detection — prevent committing API keys, passwords
+  - repo: https://github.com/Yelp/detect-secrets
+    rev: v1.4.0
+    hooks:
+      - id: detect-secrets
+        args: ['--baseline', '.secrets.baseline']
+
+  # Python code formatting
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.1.0
+    hooks:
+      - id: ruff           # Linting (replaces flake8)
+        args: [--fix]
+      - id: ruff-format    # Formatting (replaces black)
+
+  # Type checking
+  - repo: https://github.com/pre-commit/mirrors-mypy
+    rev: v1.6.0
+    hooks:
+      - id: mypy
+        additional_dependencies: [pydantic, types-requests]
+
+  # Common file hygiene
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.5.0
+    hooks:
+      - id: check-yaml           # Validate YAML files
+      - id: check-json           # Validate JSON files
+      - id: end-of-file-fixer    # Ensure files end with newline
+      - id: trailing-whitespace
+      - id: check-added-large-files
+        args: ['--maxkb=1000']   # Block files > 1MB
+
+# Install: pip install pre-commit
+# Enable: pre-commit install
+# Run manually on all files: pre-commit run --all-files`,
       },
     ],
     resources: [
-      { title: 'Pro Git Book (free)', url: 'https://git-scm.com/book/en/v2', type: 'book', free: true },
-      { title: 'GitHub Git Cheatsheet', url: 'https://education.github.com/git-cheat-sheet-education.pdf', type: 'docs', free: true },
-      { title: 'Conventional Commits', url: 'https://www.conventionalcommits.org/', type: 'docs', free: true },
+      { title: 'Pro Git Book (free, official)', url: 'https://git-scm.com/book/en/v2', type: 'book', free: true },
+      { title: 'Git official documentation', url: 'https://git-scm.com/docs', type: 'docs', free: true },
+      { title: 'Atlassian Git Tutorials (excellent explanations)', url: 'https://www.atlassian.com/git/tutorials', type: 'tutorial', free: true },
+      { title: 'Learn Git Branching (interactive visual)', url: 'https://learngitbranching.js.org', type: 'practice', free: true },
+      { title: 'Conventional Commits specification', url: 'https://www.conventionalcommits.org/en/v1.0.0/', type: 'docs', free: true },
+      { title: 'pre-commit framework docs', url: 'https://pre-commit.com', type: 'docs', free: true },
+      { title: 'GitHub Git Cheat Sheet (PDF)', url: 'https://education.github.com/git-cheat-sheet-education.pdf', type: 'docs', free: true },
+      { title: 'freeCodeCamp — Git and GitHub Full Course (YouTube)', url: 'https://www.youtube.com/watch?v=RGOj5yH7evk', type: 'video', free: true },
+      { title: 'Fireship — Git in 100 Seconds (YouTube)', url: 'https://www.youtube.com/watch?v=hwP7WQkmECE', type: 'video', free: true },
+      { title: 'GitLens — VS Code extension for Git', url: 'https://marketplace.visualstudio.com/items?itemName=eamodio.gitlens', type: 'tool', free: true },
+      { title: 'Oh My Git! — Git learning game', url: 'https://ohmygit.org', type: 'practice', free: true },
     ],
     quiz: [
       {
-        question: 'What is the safest way to undo a commit that has already been pushed to a shared branch?',
+        question: 'What is the difference between git merge and git rebase?',
         options: [
-          'git reset --hard HEAD~1 then force push',
-          'git revert <commit-hash> — creates a new commit that undoes the changes',
-          'Delete the branch and recreate it',
-          'Manually edit the files back',
+          'They produce identical results',
+          'Merge creates a merge commit joining two branch histories (preserves history). Rebase replays commits on top of another branch creating a linear history (rewrites commit hashes)',
+          'Rebase is always better than merge',
+          'Merge is for small changes; rebase is for large ones',
         ],
         answer: 1,
-        explanation: 'git revert creates a new commit that undoes the target commit\'s changes. This preserves history and is safe on shared branches. git reset --hard + force push rewrites history and breaks everyone else\'s local copies.',
+        explanation: 'Merge: "these two branches came together here" — you see a merge commit and the full branch history. Rebase: "my commits happened after all of main\'s commits" — linear history as if you wrote your work after all existing commits. Never rebase a shared branch (others have pulled it) — you rewrite commit hashes, breaking their local repos. Use rebase to update feature branches; use merge for integrating into main.',
+      },
+      {
+        question: 'A teammate pushed a broken commit to the shared main branch. What is the safest way to undo it?',
+        options: [
+          'git reset --hard HEAD~1 and git push --force',
+          'Delete the branch and recreate from backup',
+          'git revert <broken-commit-hash> — creates a new undo commit, preserving full history',
+          'Just leave it and fix forward in the next commit',
+        ],
+        answer: 2,
+        explanation: 'git reset + force push rewrites history on a shared branch. Every team member who pulled since the bad commit now has a diverged history — they must manually fix their local repos. git revert creates a new commit that undoes the changes, leaving the bad commit in history (auditable) and allowing a clean push without affecting anyone else\'s history.',
       },
     ],
   },
